@@ -1,0 +1,240 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background-color: $color-bg-page;
+  padding-bottom: 180rpx;
+}
+
+.orderHeader {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  padding: $spacing-xl $spacing-lg;
+  color: $color-text-white;
+  border-radius: 0 0 $radius-xl $radius-xl;
+}
+
+.orderNo {
+  font-size: $font-size-sm;
+  opacity: 0.8;
+  margin-bottom: $spacing-sm;
+}
+
+.orderTitle {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  margin-bottom: $spacing-md;
+}
+
+.orderStatusRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+}
+
+.statusBadge {
+  padding: 6rpx 20rpx;
+  border-radius: $radius-round;
+  background-color: rgba(255, 255, 255, 0.2);
+  font-size: $font-size-sm;
+}
+
+.priorityBadge {
+  padding: 6rpx 20rpx;
+  border-radius: $radius-round;
+  background-color: rgba(255, 255, 255, 0.2);
+  font-size: $font-size-sm;
+}
+
+.section {
+  background-color: $color-bg-card;
+  margin: $spacing-md $spacing-lg;
+  padding: $spacing-lg;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-lg;
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.titleIcon {
+  font-size: $font-size-xl;
+}
+
+.detailRow {
+  display: flex;
+  margin-bottom: $spacing-md;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.detailLabel {
+  width: 160rpx;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  flex-shrink: 0;
+}
+
+.detailValue {
+  flex: 1;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  word-break: break-all;
+}
+
+.imageList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+  margin-top: $spacing-md;
+}
+
+.imageItem {
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: $radius-sm;
+  overflow: hidden;
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  background-color: $color-bg-hover;
+}
+
+.workerCard {
+  display: flex;
+  align-items: center;
+  padding: $spacing-md;
+  background-color: $color-bg-page;
+  border-radius: $radius-md;
+}
+
+.workerAvatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: $radius-round;
+  background-color: $color-primary;
+  color: $color-text-white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: $font-size-lg;
+  margin-right: $spacing-md;
+}
+
+.workerInfo {
+  flex: 1;
+}
+
+.workerName {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: 4rpx;
+}
+
+.workerSkills {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.ratingSection {
+  background-color: $color-bg-page;
+  padding: $spacing-lg;
+  border-radius: $radius-md;
+  margin-top: $spacing-md;
+}
+
+.ratingStars {
+  display: flex;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-sm;
+}
+
+.star {
+  font-size: 48rpx;
+  color: $color-border;
+
+  &.active {
+    color: #FFD700;
+  }
+}
+
+.ratingComment {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: $line-height-normal;
+}
+
+.footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: $spacing-md $spacing-lg calc(env(safe-area-inset-bottom) + #{$spacing-md});
+  background-color: $color-bg-card;
+  box-shadow: 0 -2rpx 12rpx rgba(0, 0, 0, 0.08);
+  z-index: 100;
+  display: flex;
+  gap: $spacing-md;
+}
+
+.btn {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-lg;
+  border-radius: $radius-button;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+}
+
+.btnPrimary {
+  @extend .btn;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
+}
+
+.btnOutline {
+  @extend .btn;
+  background-color: transparent;
+  color: $color-primary;
+  border: 2rpx solid $color-primary;
+}
+
+.btnDanger {
+  @extend .btn;
+  background-color: transparent;
+  color: $color-error;
+  border: 2rpx solid $color-error;
+}
+
+.emptyState {
+  padding: $spacing-xl * 2;
+  text-align: center;
+}
+
+.emptyIcon {
+  font-size: 120rpx;
+  opacity: 0.3;
+  margin-bottom: $spacing-md;
+}
+
+.emptyText {
+  font-size: $font-size-md;
+  color: $color-text-tertiary;
+}

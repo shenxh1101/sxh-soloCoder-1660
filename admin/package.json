@@ -1,0 +1,40 @@
+{
+  "name": "property-repair-admin",
+  "version": "1.0.0",
+  "private": true,
+  "description": "物业报修与派单管理系统管理后台",
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.20.0",
+    "antd": "^5.12.0",
+    "@ant-design/icons": "^5.2.6",
+    "axios": "^1.6.2",
+    "dayjs": "^1.11.10",
+    "echarts": "^5.4.3",
+    "echarts-for-react": "^3.0.2",
+    "zustand": "^4.4.7"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "vite": "^5.0.0",
+    "typescript": "^5.3.3",
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "proxy": {
+    "/api": {
+      "target": "http://localhost:3000",
+      "changeOrigin": true
+    },
+    "/uploads": {
+      "target": "http://localhost:3000",
+      "changeOrigin": true
+    }
+  }
+}

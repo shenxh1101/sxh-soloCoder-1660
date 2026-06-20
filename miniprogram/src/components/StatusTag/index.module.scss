@@ -1,0 +1,28 @@
+@use '@/styles/variables.scss' as *;
+
+.statusTag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $radius-xs;
+  white-space: nowrap;
+
+  &.sizeSm {
+    padding: 4rpx 12rpx;
+    font-size: $font-size-xs;
+  }
+
+  &.sizeMd {
+    padding: 6rpx 16rpx;
+    font-size: $font-size-sm;
+  }
+
+  &.sizeLg {
+    padding: 8rpx 20rpx;
+    font-size: $font-size-md;
+  }
+}
+
+.statusText {
+  font-weight: $font-weight-medium;
+}

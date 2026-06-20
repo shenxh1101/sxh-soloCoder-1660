@@ -1,0 +1,50 @@
+@use '@/styles/variables.scss' as *;
+
+.selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+}
+
+.typeItem {
+  width: calc(33.33% - 16rpx);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: $spacing-lg $spacing-sm;
+  background-color: $color-bg-card;
+  border-radius: $radius-md;
+  border: 4rpx solid transparent;
+  transition: all $transition-base;
+  box-shadow: $shadow-card;
+
+  &:active {
+    transform: scale(0.96);
+  }
+
+  &.active {
+    box-shadow: $shadow-card-hover;
+  }
+}
+
+.typeIcon {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: $radius-round;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: $spacing-sm;
+  transition: all $transition-base;
+}
+
+.iconText {
+  font-size: 40rpx;
+}
+
+.typeLabel {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  text-align: center;
+  transition: all $transition-base;
+}

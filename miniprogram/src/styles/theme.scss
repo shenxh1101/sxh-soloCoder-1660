@@ -1,0 +1,49 @@
+// ============================================
+// 主题配色变量（第二阶段模型可修改此文件）
+// ============================================
+
+// 品牌主题色：根据产品品牌定位修改
+$color-primary: #1677ff;
+$color-primary-light: #4096ff;
+$color-primary-dark: #0958d9;
+
+// 功能色
+$color-success: #00b42a;
+$color-warning: #ff7d00;
+$color-error: #f53f3f;
+$color-info: #1677ff;
+
+// 状态色（工单状态专用）
+$color-status-pending-bg: #fff7e8;
+$color-status-pending-text: #ff7d00;
+$color-status-assigned-bg: #e8f3ff;
+$color-status-assigned-text: #1677ff;
+$color-status-processing-bg: #f2ecff;
+$color-status-processing-text: #722ed1;
+$color-status-completed-bg: #e8ffea;
+$color-status-completed-text: #00b42a;
+$color-status-cancelled-bg: #f2f3f5;
+$color-status-cancelled-text: #86909c;
+
+// 报修类型色
+$color-type-water-electric: #1677ff;
+$color-type-access-control: #722ed1;
+$color-type-elevator: #13c2c2;
+$color-type-public-facility: #fa8c16;
+$color-type-other: #8c8c8c;
+
+// 背景色
+$color-bg-page: #f5f7fa;
+$color-bg-card: #ffffff;
+$color-bg-hover: #f2f3f5;
+
+// 文本色
+$color-text-primary: #1d2129;
+$color-text-secondary: #4e5969;
+$color-text-tertiary: #86909c;
+$color-text-disabled: #c9cdd4;
+$color-text-white: #ffffff;
+
+// 边框色
+$color-border: #e5e6eb;
+$color-divider: #f2f3f5;

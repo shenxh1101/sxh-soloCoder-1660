@@ -1,0 +1,100 @@
+@use '@/styles/variables.scss' as *;
+
+.timeline {
+  padding: $spacing-md 0;
+}
+
+.timelineItem {
+  display: flex;
+  position: relative;
+  padding-bottom: $spacing-lg;
+
+  &:last-child {
+    padding-bottom: 0;
+  }
+}
+
+.timelineLeft {
+  width: 48rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.dot {
+  width: 20rpx;
+  height: 20rpx;
+  border-radius: 50%;
+  background-color: $color-border;
+  border: 4rpx solid $color-bg-card;
+  z-index: 1;
+  flex-shrink: 0;
+
+  &.dotpending {
+    background-color: $color-status-pending-text;
+  }
+
+  &.dotassigned {
+    background-color: $color-status-assigned-text;
+  }
+
+  &.dotprocessing {
+    background-color: $color-status-processing-text;
+  }
+
+  &.dotcompleted {
+    background-color: $color-status-completed-text;
+  }
+
+  &.dotcancelled {
+    background-color: $color-status-cancelled-text;
+  }
+
+  &.dotclosed {
+    background-color: $color-status-completed-text;
+  }
+}
+
+.line {
+  width: 2rpx;
+  flex: 1;
+  background-color: $color-divider;
+  margin-top: 8rpx;
+}
+
+.timelineRight {
+  flex: 1;
+  padding-left: $spacing-sm;
+}
+
+.itemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-xs;
+}
+
+.itemTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.itemTime {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.itemDesc {
+  display: block;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: $line-height-normal;
+  margin-bottom: $spacing-xs;
+}
+
+.itemOperator {
+  display: block;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
