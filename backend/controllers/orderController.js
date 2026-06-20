@@ -1,6 +1,6 @@
 const moment = require('moment');
 const { User, RepairOrder, populateOrder, populateOrderList } = require('../models');
-const { generateOrderNo, repairTypeMap, statusMap, calculateDuration } = require('../utils/common');
+const { generateOrderNo, repairTypeMap, statusMap, calculateDuration, formatDuration } = require('../utils/common');
 const wechatService = require('../services/wechatService');
 const { userToDTO } = require('./authController');
 const { db, findAll, findById, count: countDocs, populateUser } = require('../config/nedb');
@@ -638,6 +638,9 @@ const getWorkerWorkload = async (req, res, next) => {
     const allWorkers = await findAll(db.users, { role: 'worker', status: 'active' });
     const allOrders = await findAll(db.orders, {});
 
+    const now = Date.now();
+    const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
+
     const workers = allWorkers.map(w => {
       const wOrders = allOrders.filter(o => String(o.worker) === String(w._id));
       const pendingOrders = wOrders.filter(o => ['assigned'].includes(o.status)).length;
@@ -646,6 +649,24 @@ const getWorkerWorkload = async (req, res, next) => {
       const ratedOrders = wOrders.filter(o => o.rating && o.rating.score !== undefined);
       const avgRating = ratedOrders.length > 0
         ? Number((ratedOrders.reduce((s, o) => s + Number(o.rating.score || 0), 0) / ratedOrders.length).toFixed(1))
+        : null;
+
+      // 近30天完成的工单
+      const completedLast30Days = wOrders.filter(o => {
+        if (!['completed', 'closed'].includes(o.status)) return false;
+        const completedAt = o.completedAt ? new Date(o.completedAt).getTime() : null;
+        if (!completedAt) return false;
+        return completedAt >= thirtyDaysAgo;
+      });
+
+      // 平均处理时长（基于已完成工单的 completionTime 分钟数）
+      const completedWithTime = wOrders.filter(o => 
+        ['completed', 'closed'].includes(o.status) && 
+        o.completionTime !== undefined && o.completionTime !== null && !isNaN(Number(o.completionTime))
+      );
+      const totalCompletionTime = completedWithTime.reduce((s, o) => s + Number(o.completionTime), 0);
+      const avgCompletionTimeMinutes = completedWithTime.length > 0
+        ? Math.round(totalCompletionTime / completedWithTime.length)
         : null;
 
       return {
@@ -657,9 +678,12 @@ const getWorkerWorkload = async (req, res, next) => {
         workStatus: w.workStatus || 'free',
         currentOrderCount: w.currentOrderCount || 0,
         totalOrders: wOrders.length,
-        pendingOrders: pendingOrders + processingOrders,
+        pendingOrders,
         processingOrders,
         completedOrders,
+        completedLast30Days: completedLast30Days.length,
+        avgCompletionTimeMinutes,
+        avgCompletionTime: formatDuration(avgCompletionTimeMinutes),
         avgRating
       };
     });

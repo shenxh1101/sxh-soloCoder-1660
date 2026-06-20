@@ -136,6 +136,44 @@ const OrderDetailPage: React.FC = () => {
     return null;
   };
 
+  const steps = [
+    { key: 'pending', label: '已提交', icon: '📝' },
+    { key: 'assigned', label: '已派单', icon: '📋' },
+    { key: 'processing', label: '维修中', icon: '🔧' },
+    { key: 'completed', label: '已完成', icon: '✅' },
+    { key: 'closed', label: '已评价', icon: '⭐' }
+  ];
+
+  const getStepInfo = (statusKey: string) => {
+    if (!order?.timeline) return { time: '', operator: '' };
+    const event = order.timeline.find(t => t.status === statusKey);
+    if (!event) return { time: '', operator: '' };
+    return {
+      time: event.createdAt ? formatDate(event.createdAt, 'MM-DD HH:mm') : '',
+      operator: event.operatorName || ''
+    };
+  };
+
+  const getCurrentStepIndex = () => {
+    if (!order) return 0;
+    const idx = steps.findIndex(s => s.key === order.status);
+    if (idx === -1) {
+      if (order.status === 'cancelled') return 0;
+      return 0;
+    }
+    return idx;
+  };
+
+  const isStepDone = (index: number) => {
+    if (!order || order.status === 'cancelled') return index === 0;
+    return index < getCurrentStepIndex();
+  };
+
+  const isStepActive = (index: number) => {
+    if (!order || order.status === 'cancelled') return index === 0;
+    return index === getCurrentStepIndex();
+  };
+
   if (!isLogin) {
     Taro.redirectTo({ url: '/pages/login/index' });
     return null;
@@ -177,6 +215,45 @@ const OrderDetailPage: React.FC = () => {
       </View>
 
       <ScrollView scrollY>
+        <View className={styles.statusSteps}>
+          <Text className={styles.stepsTitle}>
+            <Text className={styles.stepsTitleIcon}>📊</Text>
+            维修进度
+          </Text>
+          <View className={styles.stepsRow}>
+            {steps.map((step, index) => {
+              const info = getStepInfo(step.key);
+              const done = isStepDone(index);
+              const active = isStepActive(index);
+              return (
+                <View key={step.key} className={styles.stepItem}>
+                  <View className={`${styles.stepDot} ${done ? styles.stepDotDone : ''} ${active ? styles.stepDotActive : ''}`}>
+                    {done ? '✓' : step.icon}
+                  </View>
+                  <Text className={`${styles.stepLabel} ${done ? styles.stepLabelDone : ''} ${active ? styles.stepLabelActive : ''}`}>
+                    {step.label}
+                  </Text>
+                  {info.time && (
+                    <Text className={styles.stepTime}>{info.time}</Text>
+                  )}
+                  {info.operator && (
+                    <Text className={styles.stepOperator}>{info.operator}</Text>
+                  )}
+                </View>
+              );
+            })}
+            <View 
+              className={`${styles.stepLine} ${getCurrentStepIndex() > 0 ? styles.stepLineActive : ''}`}
+              style={{ 
+                left: `${10 + (100 / steps.length / 2)}%`,
+                right: `${10 + (100 / steps.length / 2)}%`,
+                width: getCurrentStepIndex() > 0 
+                  ? `${((getCurrentStepIndex()) / (steps.length - 1)) * 80}%`
+                  : '0%'
+              }}
+            />
+          </View>
+        </View>
         <View className={styles.section}>
           <Text className={styles.sectionTitle}>
             <Text className={styles.titleIcon}>{getRepairTypeIcon(order.repairType)}</Text>

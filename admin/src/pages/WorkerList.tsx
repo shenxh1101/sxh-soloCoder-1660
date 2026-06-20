@@ -404,13 +404,12 @@ const WorkerListPage: React.FC = () => {
           </Form.Item>
           <Form.Item
             name="phone"
-            label="手机号"
+            label="账号"
             rules={[
-              { required: true, message: '请输入手机号' },
-              { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号' }
+              { required: true, message: '请输入账号' }
             ]}
           >
-            <Input placeholder="请输入手机号" maxLength={11} />
+            <Input placeholder="请输入账号" disabled={!!editingWorker} />
           </Form.Item>
           <Form.Item
             name="skills"

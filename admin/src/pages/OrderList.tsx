@@ -13,7 +13,9 @@ import {
   Popconfirm,
   Spin,
   Image,
-  Card
+  Card,
+  Radio,
+  Tooltip
 } from 'antd';
 import {
   SearchOutlined,
@@ -41,6 +43,8 @@ const OrderListPage: React.FC = () => {
   const [selectedOrder, setSelectedOrder] = useState<RepairOrder | null>(null);
   const [workers, setWorkers] = useState<any[]>([]);
   const [workersLoading, setWorkersLoading] = useState(false);
+  const [assignMode, setAssignMode] = useState<'smart' | 'all'>('smart');
+  const [selectedWorkerId, setSelectedWorkerId] = useState<string>('');
   const [assignForm] = Form.useForm();
   const [filters, setFilters] = useState({
     keyword: '',
@@ -123,8 +127,38 @@ const OrderListPage: React.FC = () => {
   const handleAssignClick = (order: RepairOrder) => {
     setSelectedOrder(order);
     assignForm.resetFields();
+    setAssignMode('smart');
+    setSelectedWorkerId('');
     setAssignModalVisible(true);
     loadWorkers();
+  };
+
+  const getDisplayedWorkers = () => {
+    if (!workers.length) return [];
+    
+    const list = [...workers];
+    const repairType = selectedOrder?.repairType;
+    
+    if (assignMode === 'smart' && repairType) {
+      // 智能推荐：技能匹配的排前面，然后按待处理+处理中数量从少到多
+      list.sort((a, b) => {
+        const aHasSkill = a.skills?.includes(repairType) ? 0 : 1;
+        const bHasSkill = b.skills?.includes(repairType) ? 0 : 1;
+        if (aHasSkill !== bHasSkill) return aHasSkill - bHasSkill;
+        const aLoad = (a.pendingOrders || 0) + (a.processingOrders || 0);
+        const bLoad = (b.pendingOrders || 0) + (b.processingOrders || 0);
+        return aLoad - bLoad;
+      });
+    } else {
+      // 全部在岗：按待处理+处理中数量从少到多
+      list.sort((a, b) => {
+        const aLoad = (a.pendingOrders || 0) + (a.processingOrders || 0);
+        const bLoad = (b.pendingOrders || 0) + (b.processingOrders || 0);
+        return aLoad - bLoad;
+      });
+    }
+    
+    return list;
   };
 
   const handleAssignSubmit = async (values: any) => {
@@ -368,7 +402,7 @@ const OrderListPage: React.FC = () => {
         open={assignModalVisible}
         onCancel={() => setAssignModalVisible(false)}
         footer={null}
-        width={500}
+        width={600}
       >
         {selectedOrder && (
           <div style={{ marginBottom: 16, padding: 12, background: '#f5f7fa', borderRadius: 8 }}>
@@ -382,29 +416,104 @@ const OrderListPage: React.FC = () => {
           layout="vertical"
           onFinish={handleAssignSubmit}
         >
-          <Form.Item
-            name="workerId"
-            label="选择维修师傅"
-            rules={[{ required: true, message: '请选择维修师傅' }]}
-          >
-            <Select
-              placeholder="请选择维修师傅"
-              loading={workersLoading}
-              optionFilterProp="label"
-              options={workers.map(w => ({
-                value: w.id,
-                label: `${w.name} (${w.currentOrderCount}单待处理) - ${w.skills?.join('、') || '无技能标签'}`,
-                disabled: w.currentOrderCount >= 3
-              }))}
-            />
+          <Form.Item name="workerId" rules={[{ required: true, message: '请选择维修师傅' }]} style={{ marginBottom: 8 }}>
+            <Radio.Group
+              value={assignMode}
+              onChange={(e) => setAssignMode(e.target.value)}
+              style={{ marginBottom: 12 }}
+              size="small"
+            >
+              <Radio.Button value="smart">智能推荐</Radio.Button>
+              <Radio.Button value="all">全部在岗</Radio.Button>
+            </Radio.Group>
           </Form.Item>
+
+          <div
+            style={{
+              maxHeight: 320,
+              overflowY: 'auto',
+              marginBottom: 12,
+              paddingRight: 4
+            }}
+          >
+            {workersLoading ? (
+              <div style={{ textAlign: 'center', padding: 32 }}><Spin size="small" /></div>
+            ) : (getDisplayedWorkers().length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 32, color: '#999' }}>暂无符合条件的师傅</div>
+            ) : (
+              getDisplayedWorkers().map((w: any) => {
+                const isSelected = selectedWorkerId === w.id;
+                const isBusy = (w.pendingOrders + w.processingOrders) >= 3;
+                const hasSkill = selectedOrder && w.skills?.includes(selectedOrder.repairType);
+                return (
+                  <div
+                    key={w.id}
+                    onClick={() => {
+                      if (isBusy) return;
+                      setSelectedWorkerId(w.id);
+                      assignForm.setFieldsValue({ workerId: w.id });
+                    }}
+                    style={{
+                      padding: 12,
+                      marginBottom: 8,
+                      border: `2px solid ${isSelected ? '#1677ff' : isBusy ? '#ffccc7' : '#e8e8e8'}`,
+                      borderRadius: 8,
+                      cursor: isBusy ? 'not-allowed' : 'pointer',
+                      background: isSelected ? '#e6f4ff' : '#fff',
+                      opacity: isBusy ? 0.6 : 1
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <strong>{w.name}</strong>
+                        {hasSkill && assignMode === 'smart' && (
+                          <Tag color="green" style={{ margin: 0 }}>技能匹配</Tag>
+                        )}
+                        {isBusy && <Tag color="red" style={{ margin: 0 }}>繁忙</Tag>}
+                      </div>
+                      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                        {w.skills?.slice(0, 3).map((s: string) => (
+                          <Tag key={s} color="blue" style={{ margin: 0 }}>
+                            {repairTypeMap[s as keyof typeof repairTypeMap] || s}
+                          </Tag>
+                        ))}
+                      </div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, fontSize: 12, color: '#666' }}>
+                      <div>
+                        <div style={{ fontWeight: 500, color: '#fa8c16', fontSize: 16 }}>{w.pendingOrders || 0}</div>
+                        <div>待处理</div>
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 500, color: '#1677ff', fontSize: 16 }}>{w.processingOrders || 0}</div>
+                        <div>处理中</div>
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 500, color: '#52c41a', fontSize: 16 }}>{w.completedLast30Days || 0}</div>
+                        <div>近30天完成</div>
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 500, color: '#722ed1', fontSize: 16 }}>
+                          {w.avgCompletionTime || '-'}
+                        </div>
+                        <div>平均处理</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            ))}
+          </div>
+
           <Form.Item name="remark" label="备注">
-            <Input.TextArea rows={3} placeholder="请输入派单备注（选填）" />
+            <Input.TextArea rows={2} placeholder="请输入派单备注（选填）" />
           </Form.Item>
           <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
             <Space>
               <Button onClick={() => setAssignModalVisible(false)}>取消</Button>
-              <Button type="primary" htmlType="submit">确定派单</Button>
+              <Button type="primary" htmlType="submit" disabled={!selectedWorkerId}>
+                确定派单
+              </Button>
             </Space>
           </Form.Item>
         </Form>

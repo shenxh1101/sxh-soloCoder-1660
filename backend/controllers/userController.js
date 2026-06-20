@@ -94,12 +94,14 @@ const updateWorker = async (req, res, next) => {
     const { id } = req.params;
     const { name, phone, skills, status } = req.body;
 
-    const existing = await User.findOne({ phone });
-    if (existing && String(existing._id) !== String(id)) {
-      return res.status(400).json({
-        success: false,
-        message: '该手机号已被其他用户使用'
-      });
+    if (phone !== undefined && phone !== null && phone !== '') {
+      const existing = await User.findOne({ phone });
+      if (existing && String(existing._id) !== String(id)) {
+        return res.status(400).json({
+          success: false,
+          message: '该手机号已被其他用户使用'
+        });
+      }
     }
 
     const updateData = {};

@@ -45,6 +45,116 @@
   font-size: $font-size-sm;
 }
 
+.statusSteps {
+  background-color: $color-bg-card;
+  margin: $spacing-md $spacing-lg;
+  padding: $spacing-lg;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+}
+
+.stepsTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-lg;
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.stepsTitleIcon {
+  font-size: $font-size-xl;
+}
+
+.stepsRow {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  padding: 0 10rpx;
+}
+
+.stepItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  position: relative;
+  z-index: 2;
+}
+
+.stepDot {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  background-color: $color-bg-gray;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: $font-size-sm;
+  margin-bottom: $spacing-sm;
+  border: 4rpx solid $color-border-light;
+}
+
+.stepDotActive {
+  background-color: $color-primary;
+  border-color: $color-primary-light;
+  color: $color-text-white;
+  box-shadow: 0 0 0 8rpx rgba($color-primary, 0.15);
+}
+
+.stepDotDone {
+  background-color: $color-success;
+  border-color: $color-success;
+  color: $color-text-white;
+}
+
+.stepLabel {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  white-space: nowrap;
+  margin-bottom: $spacing-xs;
+}
+
+.stepLabelActive {
+  color: $color-primary;
+  font-weight: $font-weight-semibold;
+}
+
+.stepLabelDone {
+  color: $color-success;
+}
+
+.stepTime {
+  font-size: $font-size-xs;
+  color: $color-text-placeholder;
+  white-space: nowrap;
+}
+
+.stepLine {
+  position: absolute;
+  top: 24rpx;
+  left: 10%;
+  right: 10%;
+  height: 4rpx;
+  background-color: $color-border-light;
+  z-index: 1;
+}
+
+.stepLineActive {
+  background-color: $color-success;
+}
+
+.stepOperator {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  margin-top: $spacing-xs;
+  white-space: nowrap;
+  max-width: 120rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .section {
   background-color: $color-bg-card;
   margin: $spacing-md $spacing-lg;
