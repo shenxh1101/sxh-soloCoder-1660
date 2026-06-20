@@ -3,7 +3,8 @@ import { View, Text, ScrollView, Button } from '@tarojs/components';
 import Taro, { useDidShow, usePullDownRefresh, useReachBottom } from '@tarojs/taro';
 import styles from './index.module.scss';
 import { useUserStore } from '../../store/useUserStore';
-import { mockOrders } from '../../data/mock';
+import { api } from '../../services/api';
+import { normalizeOrder } from '../../utils';
 import OrderCard from '../../components/OrderCard';
 import { RepairOrder, OrderStatus, statusTextMap } from '../../types';
 import classnames from 'classnames';
@@ -36,40 +37,27 @@ const OrdersPage: React.FC = () => {
       setLoading(true);
       console.log('[OrdersPage] 加载工单列表, 筛选:', currentFilter);
 
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      let filtered = mockOrders;
-      
-      if (user?.role === 'worker') {
-        filtered = mockOrders.filter(o => 
-          o.worker?.id === '2' || o.worker?.id === '3'
-        );
-      }
-
-      if (currentFilter) {
-        filtered = filtered.filter(o => o.status === currentFilter);
-      }
-
-      filtered = filtered.sort((a, b) => 
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-
-      setAllOrders(filtered);
-      
-      const pageSize = 10;
       const currentPage = reset ? 1 : page;
-      const start = 0;
-      const end = currentPage * pageSize;
-      const pageData = filtered.slice(start, end);
+      const result = await api.orders.getList({
+        page: currentPage,
+        pageSize: 10,
+        status: currentFilter || undefined
+      });
+
+      const rawList: any[] = result?.list || result || [];
+      const list = rawList.map(normalizeOrder);
+      const total: number = result?.total ?? list.length;
 
       if (reset) {
-        setOrders(pageData);
+        setAllOrders(list);
+        setOrders(list);
         setPage(1);
+        setHasMore(total > list.length);
       } else {
-        setOrders(pageData);
+        setAllOrders(prev => [...prev, ...list]);
+        setOrders(prev => [...prev, ...list]);
+        setHasMore((currentPage * 10) < total);
       }
-      
-      setHasMore(end < filtered.length);
     } catch (error) {
       console.error('[OrdersPage] 加载失败:', error);
       Taro.showToast({ title: '加载失败', icon: 'none' });

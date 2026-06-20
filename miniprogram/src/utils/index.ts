@@ -1,5 +1,47 @@
 import dayjs from 'dayjs';
-import { OrderStatus, statusColorMap, statusTextMap } from '../types';
+import { OrderStatus, statusColorMap, statusTextMap, User, RepairOrder } from '../types';
+
+export const normalizeUser = (raw: any): User => {
+  if (!raw) return raw;
+  const id = String(raw.id || raw._id || '');
+  return {
+    ...raw,
+    id,
+    status: raw.status || 'active',
+    createdAt: raw.createdAt || new Date().toISOString()
+  };
+};
+
+export const normalizeOrder = (raw: any): RepairOrder => {
+  if (!raw) return raw;
+  const id = String(raw.id || raw._id || '');
+  return {
+    ...raw,
+    id,
+    owner: normalizeUser(raw.owner),
+    worker: raw.worker ? normalizeUser(raw.worker) : undefined,
+    assignedBy: raw.assignedBy ? normalizeUser(raw.assignedBy) : undefined,
+    repairTypeName: raw.repairTypeName || repairTypeLabel(raw.repairType),
+    timeline: (raw.timeline || []).map((t: any) => ({
+      ...t,
+      status: t.status || raw.status,
+      createdAt: t.createdAt || t.time || new Date().toISOString()
+    })),
+    createdAt: raw.createdAt || new Date().toISOString(),
+    updatedAt: raw.updatedAt || raw.createdAt || new Date().toISOString()
+  };
+};
+
+const repairTypeLabel = (type: string) => {
+  const map: Record<string, string> = {
+    water_electric: '水电维修',
+    access_control: '门禁系统',
+    elevator: '电梯故障',
+    public_facility: '公共设施',
+    other: '其他报修'
+  };
+  return map[type] || type || '其他';
+};
 
 export const formatDate = (date: string | Date, format: string = 'YYYY-MM-DD HH:mm'): string => {
   return dayjs(date).format(format);

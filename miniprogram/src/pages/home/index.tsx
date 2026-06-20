@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, Button, ScrollView } from '@tarojs/components';
 import Taro, { useDidShow, usePullDownRefresh } from '@tarojs/taro';
+import dayjs from 'dayjs';
 import styles from './index.module.scss';
 import { useUserStore } from '../../store/useUserStore';
-import { mockOrders, mockOwnerDashboard, mockWorkerDashboard } from '../../data/mock';
+import { api } from '../../services/api';
+import { normalizeOrder } from '../../utils';
 import OrderCard from '../../components/OrderCard';
 import { RepairOrder } from '../../types';
 import classnames from 'classnames';
@@ -24,17 +26,38 @@ const HomePage: React.FC = () => {
       setLoading(true);
       console.log('[HomePage] 加载首页数据');
 
-      if (user?.role === 'worker') {
-        setStats(mockWorkerDashboard);
-        setRecentOrders(mockOrders.filter(o => 
-          o.status === 'assigned' || o.status === 'processing'
-        ).slice(0, 3));
-      } else {
-        setStats(mockOwnerDashboard);
-        setRecentOrders(mockOrders.slice(0, 3));
-      }
+      const result = await api.orders.getList({ pageSize: 50 });
+      const list: any[] = result?.list || result || [];
+      const normalizedList = list.map(normalizeOrder);
 
-      await new Promise(resolve => setTimeout(resolve, 500));
+      if (user?.role === 'worker') {
+        const today = dayjs().format('YYYY-MM-DD');
+        const todayOrders = normalizedList.filter(o => dayjs(o.createdAt).format('YYYY-MM-DD') === today);
+        const pendingOrders = normalizedList.filter(o => o.status === 'assigned' || o.status === 'processing');
+        const todayCompleted = todayOrders.filter(o => o.status === 'completed' || o.status === 'closed');
+
+        setStats({
+          todayOrders: todayOrders.length,
+          pendingOrders: pendingOrders.length,
+          completedOrders: todayCompleted.length,
+          avgResponseTime: 0,
+          avgCompletionTime: 0
+        });
+        setRecentOrders(pendingOrders.slice(0, 3));
+      } else {
+        const totalOrders = list.length;
+        const pendingOrders = list.filter((o: any) => o.status === 'pending').length;
+        const processingOrders = list.filter((o: any) => o.status === 'assigned' || o.status === 'processing').length;
+        const completedOrders = list.filter((o: any) => o.status === 'completed' || o.status === 'closed').length;
+
+        setStats({
+          totalOrders,
+          pendingOrders,
+          processingOrders,
+          completedOrders
+        });
+        setRecentOrders(normalizedList.slice(0, 3));
+      }
     } catch (error) {
       console.error('[HomePage] 加载失败:', error);
       Taro.showToast({ title: '加载失败', icon: 'none' });

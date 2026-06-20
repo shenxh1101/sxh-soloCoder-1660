@@ -96,7 +96,7 @@ export const api = {
 
   orders: {
     create: (data: any) =>
-      request({ url: '/orders', method: 'POST', data, header: { 'Content-Type': 'multipart/form-data' } }),
+      request({ url: '/orders', method: 'POST', data }),
     
     getList: (params?: any) =>
       request({ url: '/orders', method: 'GET', data: params }),
@@ -111,7 +111,7 @@ export const api = {
       request({ url: `/orders/${id}/start`, method: 'PUT' }),
     
     complete: (id: string, data: any) =>
-      request({ url: `/orders/${id}/complete`, method: 'PUT', data, header: { 'Content-Type': 'multipart/form-data' } }),
+      request({ url: `/orders/${id}/complete`, method: 'PUT', data }),
     
     rate: (id: string, score: number, comment?: string) =>
       request({ url: `/orders/${id}/rate`, method: 'PUT', data: { score, comment } }),

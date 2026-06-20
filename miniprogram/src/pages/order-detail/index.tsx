@@ -3,11 +3,11 @@ import { View, Text, Image, Button, ScrollView } from '@tarojs/components';
 import Taro, { useRouter, useDidShow } from '@tarojs/taro';
 import styles from './index.module.scss';
 import { useUserStore } from '../../store/useUserStore';
-import { mockOrders } from '../../data/mock';
 import { RepairOrder, statusTextMap, priorityTextMap } from '../../types';
-import { formatDate, formatDuration, getRepairTypeIcon } from '../../utils';
+import { formatDate, formatDuration, getRepairTypeIcon, normalizeOrder } from '../../utils';
 import Timeline from '../../components/Timeline';
 import StatusTag from '../../components/StatusTag';
+import { api } from '../../services/api';
 import classnames from 'classnames';
 
 const OrderDetailPage: React.FC = () => {
@@ -28,10 +28,8 @@ const OrderDetailPage: React.FC = () => {
       setLoading(true);
       console.log('[OrderDetail] 加载工单详情:', orderId);
 
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      const found = mockOrders.find(o => o.id === orderId);
-      setOrder(found || null);
+      const data = await api.orders.getDetail(orderId);
+      setOrder(normalizeOrder(data));
     } catch (error) {
       console.error('[OrderDetail] 加载失败:', error);
       Taro.showToast({ title: '加载失败', icon: 'none' });
@@ -75,10 +73,15 @@ const OrderDetailPage: React.FC = () => {
       content: '确定要取消该工单吗？',
       success: async (res) => {
         if (res.confirm) {
-          Taro.showToast({ title: '取消成功', icon: 'success' });
-          setTimeout(() => {
-            Taro.navigateBack();
-          }, 1000);
+          try {
+            await api.orders.cancel(orderId, '业主取消');
+            Taro.showToast({ title: '取消成功', icon: 'success' });
+            setTimeout(() => {
+              Taro.navigateBack();
+            }, 1000);
+          } catch (error) {
+            console.error('[OrderDetail] 取消失败:', error);
+          }
         }
       }
     });

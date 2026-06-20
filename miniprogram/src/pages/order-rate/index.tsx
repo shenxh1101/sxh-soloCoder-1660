@@ -3,9 +3,9 @@ import { View, Text, Textarea, Button } from '@tarojs/components';
 import Taro, { useRouter, useDidShow } from '@tarojs/taro';
 import styles from './index.module.scss';
 import { useUserStore } from '../../store/useUserStore';
-import { mockOrders } from '../../data/mock';
 import { RepairOrder } from '../../types';
-import { formatDate } from '../../utils';
+import { formatDate, normalizeOrder } from '../../utils';
+import { api } from '../../services/api';
 import classnames from 'classnames';
 
 const ratingLabels = ['非常差', '较差', '一般', '满意', '非常满意'];
@@ -34,10 +34,8 @@ const OrderRatePage: React.FC = () => {
       setLoading(true);
       console.log('[OrderRate] 加载工单:', orderId);
 
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      const found = mockOrders.find(o => o.id === orderId);
-      setOrder(found || null);
+      const data = await api.orders.getDetail(orderId);
+      setOrder(normalizeOrder(data));
     } catch (error) {
       console.error('[OrderRate] 加载失败:', error);
       Taro.showToast({ title: '加载失败', icon: 'none' });
@@ -78,14 +76,15 @@ const OrderRatePage: React.FC = () => {
 
     try {
       setSubmitting(true);
+      const finalComment = comment + (selectedTags.length ? ' 标签:' + selectedTags.join(',') : '');
       console.log('[OrderRate] 提交评价:', {
         rating,
-        comment,
+        comment: finalComment,
         tags: selectedTags
       });
 
       Taro.showLoading({ title: '提交中...', mask: true });
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await api.orders.rate(orderId, rating, finalComment);
       Taro.hideLoading();
 
       Taro.showToast({ 

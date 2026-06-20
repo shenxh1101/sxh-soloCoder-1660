@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   Card,
   Row,
@@ -45,10 +45,6 @@ const StatsPage: React.FC = () => {
     keyword: ''
   });
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
   const loadData = async () => {
     try {
       setLoading(true);
@@ -56,6 +52,9 @@ const StatsPage: React.FC = () => {
         startDate: filters.dateRange[0].format('YYYY-MM-DD'),
         endDate: filters.dateRange[1].format('YYYY-MM-DD')
       };
+      if (filters.status) params.status = filters.status;
+      if (filters.repairType) params.repairType = filters.repairType;
+      if (filters.keyword) params.keyword = filters.keyword;
 
       const [typeData, workerData, ordersData] = await Promise.all([
         api.stats.getRepairTypeStats(params),
@@ -74,6 +73,18 @@ const StatsPage: React.FC = () => {
     }
   };
 
+  const debounceTimer = useRef<any>(null);
+  useEffect(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      loadData();
+    }, 400);
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.status, filters.repairType, filters.keyword, filters.dateRange[0].valueOf(), filters.dateRange[1].valueOf()]);
+
   const handleExport = async () => {
     try {
       setExportLoading(true);
@@ -83,6 +94,7 @@ const StatsPage: React.FC = () => {
       };
       if (filters.status) params.status = filters.status;
       if (filters.repairType) params.repairType = filters.repairType;
+      if (filters.keyword) params.keyword = filters.keyword;
 
       const blob = await api.stats.exportOrders(params) as Blob;
       const url = window.URL.createObjectURL(blob);
@@ -178,19 +190,36 @@ const StatsPage: React.FC = () => {
     };
   };
 
+  const safeNum = (v: any, def = 0) => {
+    if (v === null || v === undefined || isNaN(Number(v))) return def;
+    return Number(v);
+  };
+
+  const filteredOrders = orders.filter(o => {
+    if (!filters.keyword) return true;
+    const kw = filters.keyword.toLowerCase();
+    return (
+      String(o.orderNo || '').toLowerCase().includes(kw) ||
+      String(o.title || '').toLowerCase().includes(kw) ||
+      String(o.description || '').toLowerCase().includes(kw) ||
+      String(o.owner?.name || '').toLowerCase().includes(kw) ||
+      String(o.worker?.name || '').toLowerCase().includes(kw)
+    );
+  });
+
   const calculateSummary = () => {
-    const completed = orders.filter(o => o.status === 'completed' || o.status === 'closed');
-    const totalRating = completed.reduce((sum, o) => sum + (o.rating?.score || 0), 0);
+    const completed = filteredOrders.filter(o => o.status === 'completed' || o.status === 'closed');
+    const totalRating = completed.reduce((sum, o) => sum + safeNum(o.rating?.score), 0);
     const avgRating = completed.length > 0 ? (totalRating / completed.length).toFixed(1) : '0';
     
-    const totalResponseTime = orders.reduce((sum, o) => sum + (o.responseTime || 0), 0);
-    const totalCompletionTime = completed.reduce((sum, o) => sum + (o.completionTime || 0), 0);
+    const totalResponseTime = filteredOrders.reduce((sum, o) => sum + safeNum(o.responseTime), 0);
+    const totalCompletionTime = completed.reduce((sum, o) => sum + safeNum(o.completionTime), 0);
     
-    const avgResponse = orders.length > 0 ? Math.round(totalResponseTime / orders.length) : 0;
+    const avgResponse = filteredOrders.length > 0 ? Math.round(totalResponseTime / filteredOrders.length) : 0;
     const avgCompletion = completed.length > 0 ? Math.round(totalCompletionTime / completed.length) : 0;
 
     return {
-      total: orders.length,
+      total: filteredOrders.length,
       completed: completed.length,
       avgRating,
       avgResponse,
@@ -199,21 +228,6 @@ const StatsPage: React.FC = () => {
   };
 
   const summary = calculateSummary();
-
-  const filteredOrders = orders.filter(o => {
-    if (filters.status && o.status !== filters.status) return false;
-    if (filters.repairType && o.repairType !== filters.repairType) return false;
-    if (filters.keyword) {
-      const kw = filters.keyword.toLowerCase();
-      return (
-        o.orderNo?.toLowerCase().includes(kw) ||
-        o.title?.toLowerCase().includes(kw) ||
-        o.owner?.name?.toLowerCase().includes(kw) ||
-        o.worker?.name?.toLowerCase().includes(kw)
-      );
-    }
-    return true;
-  });
 
   const formatDuration = (minutes?: number) => {
     if (!minutes) return '-';
@@ -479,7 +493,10 @@ const StatsPage: React.FC = () => {
               key: 'avgRating',
               width: 100,
               align: 'center',
-              render: (val) => val ? `${val.toFixed(1)}分` : '-'
+              render: (val) => {
+                if (val === null || val === undefined || val === '暂无' || val === '') return '-';
+                return `${Number(val).toFixed(1)}分`;
+              }
             }
           ]}
         />

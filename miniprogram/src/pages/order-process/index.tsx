@@ -3,9 +3,9 @@ import { View, Text, Textarea, Button, Image } from '@tarojs/components';
 import Taro, { useRouter, useDidShow, useUnload } from '@tarojs/taro';
 import styles from './index.module.scss';
 import { useUserStore } from '../../store/useUserStore';
-import { mockOrders } from '../../data/mock';
+import { api } from '../../services/api';
 import { RepairOrder } from '../../types';
-import { formatDate, getRepairTypeIcon } from '../../utils';
+import { formatDate, getRepairTypeIcon, normalizeOrder } from '../../utils';
 import ImageUploader from '../../components/ImageUploader';
 
 const OrderProcessPage: React.FC = () => {
@@ -33,14 +33,13 @@ const OrderProcessPage: React.FC = () => {
       setLoading(true);
       console.log('[OrderProcess] 加载工单:', orderId);
 
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      const found = mockOrders.find(o => o.id === orderId);
-      setOrder(found || null);
+      const raw = await api.orders.getDetail(orderId);
+      const order = normalizeOrder(raw);
+      setOrder(order);
 
-      if (found && found.status === 'processing') {
+      if (order && order.status === 'processing') {
         setProcessing(true);
-        setStartTime(new Date(found.startedAt!));
+        setStartTime(new Date(order.startedAt));
       }
     } catch (error) {
       console.error('[OrderProcess] 加载失败:', error);
@@ -94,13 +93,15 @@ const OrderProcessPage: React.FC = () => {
       console.log('[OrderProcess] 开始处理工单');
       
       Taro.showLoading({ title: '开始处理...', mask: true });
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await api.orders.start(orderId);
       Taro.hideLoading();
 
       setProcessing(true);
       setStartTime(new Date());
 
       Taro.showToast({ title: '已开始处理', icon: 'success' });
+
+      loadOrder();
     } catch (error) {
       console.error('[OrderProcess] 开始处理失败:', error);
       Taro.hideLoading();
@@ -123,7 +124,7 @@ const OrderProcessPage: React.FC = () => {
       });
 
       Taro.showLoading({ title: '提交中...', mask: true });
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await api.orders.complete(orderId, { description, images: images || [] });
       Taro.hideLoading();
 
       Taro.showToast({ 

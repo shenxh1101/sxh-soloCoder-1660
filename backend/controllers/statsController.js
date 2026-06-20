@@ -16,7 +16,7 @@ const avg = (arr) => {
   return valid.reduce((s, v) => s + Number(v), 0) / valid.length;
 };
 
-const filterOrdersByRange = (orders, startDate, endDate) => {
+const filterOrdersByRange = (orders, startDate, endDate, status, repairType) => {
   let result = [...orders];
   if (startDate) {
     const sd = new Date(startDate);
@@ -25,6 +25,14 @@ const filterOrdersByRange = (orders, startDate, endDate) => {
   if (endDate) {
     const ed = new Date(endDate + ' 23:59:59');
     result = result.filter(o => new Date(o.createdAt) <= ed);
+  }
+  if (status) {
+    const statusArr = Array.isArray(status) ? status : [status];
+    result = result.filter(o => statusArr.includes(o.status));
+  }
+  if (repairType) {
+    const typeArr = Array.isArray(repairType) ? repairType : [repairType];
+    result = result.filter(o => typeArr.includes(o.repairType));
   }
   return result;
 };
@@ -165,10 +173,10 @@ const getDashboardStats = async (req, res, next) => {
 
 const getRepairTypeStats = async (req, res, next) => {
   try {
-    const { startDate, endDate } = req.query;
+    const { startDate, endDate, status, repairType } = req.query;
 
     let allOrders = await findAll(db.orders, {});
-    allOrders = filterOrdersByRange(allOrders, startDate, endDate);
+    allOrders = filterOrdersByRange(allOrders, startDate, endDate, status, repairType);
 
     const typeMap = {};
     allOrders.forEach(o => {
@@ -218,14 +226,14 @@ const getRepairTypeStats = async (req, res, next) => {
 
 const getWorkerStats = async (req, res, next) => {
   try {
-    const { startDate, endDate } = req.query;
+    const { startDate, endDate, status, repairType } = req.query;
 
     const allUsers = await findAll(db.users, {});
     const usersMap = {};
     allUsers.forEach(u => { usersMap[u._id] = u; });
 
     let allOrders = await findAll(db.orders, {});
-    allOrders = filterOrdersByRange(allOrders, startDate, endDate);
+    allOrders = filterOrdersByRange(allOrders, startDate, endDate, status, repairType);
     const workerOrders = allOrders.filter(o => o.worker);
 
     const workerAgg = {};

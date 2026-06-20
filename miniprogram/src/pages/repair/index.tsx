@@ -6,6 +6,7 @@ import { useUserStore } from '../../store/useUserStore';
 import RepairTypeSelector from '../../components/RepairTypeSelector';
 import ImageUploader from '../../components/ImageUploader';
 import { RepairType } from '../../types';
+import { api } from '../../services/api';
 import classnames from 'classnames';
 
 const RepairPage: React.FC = () => {
@@ -77,7 +78,16 @@ const RepairPage: React.FC = () => {
         contactPhone
       });
 
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await api.orders.create({
+        repairType,
+        title,
+        description,
+        building,
+        room,
+        contactName,
+        contactPhone,
+        priority: 'medium'
+      });
 
       Taro.showToast({
         title: '提交成功',
