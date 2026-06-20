@@ -1,7 +1,28 @@
 const bcrypt = require('bcryptjs');
-const User = require('../models/User');
+const { User } = require('../models');
 const { generateToken } = require('../middleware/auth');
 const wechatService = require('../services/wechatService');
+
+const userToDTO = (user, includeExtra = false) => {
+  const dto = {
+    id: user._id,
+    _id: user._id,
+    phone: user.phone,
+    name: user.name,
+    role: user.role,
+    building: user.building,
+    room: user.room,
+    avatar: user.avatar,
+    skills: user.skills || [],
+    workStatus: user.workStatus,
+    status: user.status
+  };
+  if (includeExtra) {
+    dto.openid = user.openid;
+    dto.currentOrderCount = user.currentOrderCount || 0;
+  }
+  return dto;
+};
 
 const register = async (req, res, next) => {
   try {
@@ -24,7 +45,7 @@ const register = async (req, res, next) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = new User({
+    const user = await User.create({
       phone,
       password: hashedPassword,
       name,
@@ -34,26 +55,20 @@ const register = async (req, res, next) => {
       skills: skills || []
     });
 
-    await user.save();
-
     const token = generateToken(user);
 
-    res.json({
+    res.status(201).json({
       success: true,
       message: '注册成功',
       data: {
         token,
-        user: {
-          id: user._id,
-          phone: user.phone,
-          name: user.name,
-          role: user.role,
-          building: user.building,
-          room: user.room
-        }
+        user: userToDTO(user)
       }
     });
   } catch (error) {
+    if (error.message && error.message.includes('unique')) {
+      return res.status(400).json({ success: false, message: '该手机号已注册' });
+    }
     next(error);
   }
 };
@@ -73,7 +88,14 @@ const login = async (req, res, next) => {
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: '手机号或密码错误'
+        message: '账号或密码错误'
+      });
+    }
+
+    if (!user.password) {
+      return res.status(401).json({
+        success: false,
+        message: '该账号未设置密码，请使用其他方式登录'
       });
     }
 
@@ -81,7 +103,7 @@ const login = async (req, res, next) => {
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        message: '手机号或密码错误'
+        message: '账号或密码错误'
       });
     }
 
@@ -99,17 +121,7 @@ const login = async (req, res, next) => {
       message: '登录成功',
       data: {
         token,
-        user: {
-          id: user._id,
-          phone: user.phone,
-          name: user.name,
-          role: user.role,
-          building: user.building,
-          room: user.room,
-          avatar: user.avatar,
-          skills: user.skills,
-          workStatus: user.workStatus
-        }
+        user: userToDTO(user, true)
       }
     });
   } catch (error) {
@@ -139,13 +151,12 @@ const wechatLogin = async (req, res, next) => {
     let user = await User.findOne({ openid: session.openid });
 
     if (!user) {
-      user = new User({
+      user = await User.create({
         openid: session.openid,
         name: userInfo?.nickName || '微信用户',
         avatar: userInfo?.avatarUrl,
         role: 'owner'
       });
-      await user.save();
     }
 
     const token = generateToken(user);
@@ -155,16 +166,7 @@ const wechatLogin = async (req, res, next) => {
       message: '登录成功',
       data: {
         token,
-        user: {
-          id: user._id,
-          openid: user.openid,
-          name: user.name,
-          avatar: user.avatar,
-          role: user.role,
-          phone: user.phone,
-          building: user.building,
-          room: user.room
-        }
+        user: userToDTO(user)
       }
     });
   } catch (error) {
@@ -174,7 +176,7 @@ const wechatLogin = async (req, res, next) => {
 
 const getCurrentUser = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id).select('-password');
+    const user = await User.findById(req.user.id);
 
     if (!user) {
       return res.status(404).json({
@@ -183,9 +185,12 @@ const getCurrentUser = async (req, res, next) => {
       });
     }
 
+    const dto = userToDTO(user, true);
+    delete dto.password;
+
     res.json({
       success: true,
-      data: user
+      data: dto
     });
   } catch (error) {
     next(error);
@@ -198,9 +203,8 @@ const updateProfile = async (req, res, next) => {
 
     const user = await User.findByIdAndUpdate(
       req.user.id,
-      { name, phone, building, room, avatar },
-      { new: true, runValidators: true }
-    ).select('-password');
+      { name, phone, building, room, avatar }
+    );
 
     if (!user) {
       return res.status(404).json({
@@ -209,10 +213,13 @@ const updateProfile = async (req, res, next) => {
       });
     }
 
+    const updated = await User.findById(req.user.id);
+    const dto = userToDTO(updated);
+
     res.json({
       success: true,
       message: '更新成功',
-      data: user
+      data: dto
     });
   } catch (error) {
     next(error);
@@ -224,5 +231,6 @@ module.exports = {
   login,
   wechatLogin,
   getCurrentUser,
-  updateProfile
+  updateProfile,
+  userToDTO
 };

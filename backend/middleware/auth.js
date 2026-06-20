@@ -1,4 +1,8 @@
+require('dotenv').config();
 const jwt = require('jsonwebtoken');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'property-repair-secret-key-2024';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
 const generateToken = (user) => {
   return jwt.sign(
@@ -7,16 +11,16 @@ const generateToken = (user) => {
       role: user.role,
       phone: user.phone
     },
-    process.env.JWT_SECRET,
+    JWT_SECRET,
     {
-      expiresIn: process.env.JWT_EXPIRES_IN || '7d'
+      expiresIn: JWT_EXPIRES_IN
     }
   );
 };
 
 const verifyToken = (token) => {
   try {
-    return jwt.verify(token, process.env.JWT_SECRET);
+    return jwt.verify(token, JWT_SECRET);
   } catch (error) {
     return null;
   }

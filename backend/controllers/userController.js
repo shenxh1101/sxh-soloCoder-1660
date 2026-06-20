@@ -1,26 +1,38 @@
-const User = require('../models/User');
+const { User } = require('../models');
+const { db, findAll, find, count: countDocs, findById } = require('../config/nedb');
+const { userToDTO } = require('./authController');
+
+const safeNumber = (v, defaultValue = 0) => {
+  if (v === null || v === undefined || isNaN(Number(v))) return defaultValue;
+  return Number(v);
+};
 
 const getWorkerList = async (req, res, next) => {
   try {
     const { skills, workStatus } = req.query;
     
-    const query = { role: 'worker', status: 'active' };
+    let workers = await findAll(db.users, { role: 'worker', status: 'active' });
     
     if (skills) {
-      query.skills = { $in: Array.isArray(skills) ? skills : [skills] };
+      const skillArr = Array.isArray(skills) ? skills : [skills];
+      workers = workers.filter(w => w.skills && skillArr.some(s => w.skills.includes(s)));
     }
     
     if (workStatus) {
-      query.workStatus = workStatus;
+      workers = workers.filter(w => w.workStatus === workStatus);
     }
 
-    const workers = await User.find(query)
-      .select('-password')
-      .sort({ currentOrderCount: 1, createdAt: 1 });
+    workers.sort((a, b) => safeNumber(a.currentOrderCount) - safeNumber(b.currentOrderCount));
+
+    const result = workers.map(w => ({
+      ...userToDTO(w, true),
+      id: w._id,
+      _id: w._id
+    }));
 
     res.json({
       success: true,
-      data: workers
+      data: result
     });
   } catch (error) {
     next(error);
@@ -49,7 +61,7 @@ const createWorker = async (req, res, next) => {
     const bcrypt = require('bcryptjs');
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const worker = new User({
+    const worker = await User.create({
       name,
       phone,
       password: hashedPassword,
@@ -59,14 +71,19 @@ const createWorker = async (req, res, next) => {
       currentOrderCount: 0
     });
 
-    await worker.save();
-
     res.status(201).json({
       success: true,
       message: '维修师傅创建成功',
-      data: worker
+      data: {
+        ...userToDTO(worker, true),
+        id: worker._id,
+        _id: worker._id
+      }
     });
   } catch (error) {
+    if (error.message && error.message.includes('unique')) {
+      return res.status(400).json({ success: false, message: '该手机号已存在' });
+    }
     next(error);
   }
 };
@@ -76,11 +93,22 @@ const updateWorker = async (req, res, next) => {
     const { id } = req.params;
     const { name, phone, skills, status } = req.body;
 
-    const worker = await User.findByIdAndUpdate(
-      id,
-      { name, phone, skills, status },
-      { new: true, runValidators: true }
-    ).select('-password');
+    const existing = await User.findOne({ phone });
+    if (existing && String(existing._id) !== String(id)) {
+      return res.status(400).json({
+        success: false,
+        message: '该手机号已被其他用户使用'
+      });
+    }
+
+    const updateData = {};
+    if (name !== undefined) updateData.name = name;
+    if (phone !== undefined) updateData.phone = phone;
+    if (skills !== undefined) updateData.skills = skills;
+    if (status !== undefined) updateData.status = status;
+    updateData.updatedAt = new Date();
+
+    const worker = await User.findByIdAndUpdate(id, updateData);
 
     if (!worker) {
       return res.status(404).json({
@@ -89,12 +117,21 @@ const updateWorker = async (req, res, next) => {
       });
     }
 
+    const updated = await User.findById(id);
+
     res.json({
       success: true,
       message: '更新成功',
-      data: worker
+      data: {
+        ...userToDTO(updated, true),
+        id: updated._id,
+        _id: updated._id
+      }
     });
   } catch (error) {
+    if (error.message && error.message.includes('unique')) {
+      return res.status(400).json({ success: false, message: '该手机号已被其他用户使用' });
+    }
     next(error);
   }
 };
@@ -103,38 +140,45 @@ const getUserList = async (req, res, next) => {
   try {
     const { page = 1, pageSize = 10, role, keyword } = req.query;
 
-    const query = {};
+    let users = await findAll(db.users, {});
     
     if (role) {
-      query.role = role;
+      users = users.filter(u => u.role === role);
     }
 
     if (keyword) {
-      query.$or = [
-        { name: { $regex: keyword, $options: 'i' } },
-        { phone: { $regex: keyword, $options: 'i' } }
-      ];
+      const kw = String(keyword).toLowerCase();
+      users = users.filter(u =>
+        String(u.name || '').toLowerCase().includes(kw) ||
+        String(u.phone || '').toLowerCase().includes(kw)
+      );
     }
 
-    const skip = (page - 1) * pageSize;
+    users.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
-    const users = await User.find(query)
-      .select('-password')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(parseInt(pageSize));
+    const total = users.length;
+    const pageNum = parseInt(page);
+    const pageSizeNum = parseInt(pageSize);
+    const skip = (pageNum - 1) * pageSizeNum;
+    const paged = users.slice(skip, skip + pageSizeNum);
 
-    const total = await User.countDocuments(query);
+    const list = paged.map(u => ({
+      ...userToDTO(u, true),
+      id: u._id,
+      _id: u._id,
+      createdAt: u.createdAt,
+      updatedAt: u.updatedAt
+    }));
 
     res.json({
       success: true,
       data: {
-        list: users,
+        list,
         pagination: {
-          page: parseInt(page),
-          pageSize: parseInt(pageSize),
+          page: pageNum,
+          pageSize: pageSizeNum,
           total,
-          totalPages: Math.ceil(total / pageSize)
+          totalPages: Math.ceil(total / pageSizeNum)
         }
       }
     });
@@ -147,11 +191,7 @@ const deleteUser = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const user = await User.findByIdAndUpdate(
-      id,
-      { status: 'inactive' },
-      { new: true }
-    );
+    const user = await User.findByIdAndUpdate(id, { status: 'inactive' });
 
     if (!user) {
       return res.status(404).json({

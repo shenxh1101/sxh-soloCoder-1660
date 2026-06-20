@@ -105,11 +105,13 @@ const StatsPage: React.FC = () => {
   const getTypeTimeOption = () => {
     if (!typeStats.length) return {};
 
-    const types = typeStats.map(item => 
-      repairTypeMap[item._id as keyof typeof repairTypeMap] || item._id
+    const types = typeStats.map(item =>
+      repairTypeMap[item._id as keyof typeof repairTypeMap] ||
+      repairTypeMap[item.repairType as keyof typeof repairTypeMap] ||
+      item.repairTypeName || item._id
     );
-    const avgResponse = typeStats.map(item => item.avgResponseTime || 0);
-    const avgCompletion = typeStats.map(item => item.avgCompletionTime || 0);
+    const avgResponse = typeStats.map(item => item.avgResponseTimeMinutes ?? item.avgResponseTimeNum ?? 0);
+    const avgCompletion = typeStats.map(item => item.avgCompletionTimeMinutes ?? item.avgCompletionTimeNum ?? 0);
 
     return {
       tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
