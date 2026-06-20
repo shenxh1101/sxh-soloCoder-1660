@@ -81,7 +81,9 @@ const createOrder = async (req, res, next) => {
       });
     }
 
-    const images = req.files?.map(file => `/uploads/${file.fieldname}/${file.filename}`) || [];
+    const imagesFromFiles = req.files?.map(file => `/uploads/${file.fieldname}/${file.filename}`) || [];
+    const imagesFromBody = Array.isArray(req.body.images) ? req.body.images.filter(Boolean) : [];
+    const images = [...imagesFromFiles, ...imagesFromBody];
 
     const orderNo = generateOrderNo();
 
@@ -434,7 +436,9 @@ const completeOrder = async (req, res, next) => {
       });
     }
 
-    const images = req.files?.map(file => `/uploads/${file.fieldname}/${file.filename}`) || [];
+    const imagesFromFiles = req.files?.map(file => `/uploads/${file.fieldname}/${file.filename}`) || [];
+    const imagesFromBody = Array.isArray(req.body.images) ? req.body.images.filter(Boolean) : [];
+    const images = [...imagesFromFiles, ...imagesFromBody];
     const worker = await User.findById(req.user.id);
     const completedAt = new Date();
 

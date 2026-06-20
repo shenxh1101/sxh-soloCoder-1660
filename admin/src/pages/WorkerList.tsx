@@ -124,12 +124,11 @@ const WorkerListPage: React.FC = () => {
   const handleSubmit = async (values: any) => {
     try {
       if (editingWorker) {
-        await api.users.update(editingWorker.id, values);
+        await api.users.updateWorker(editingWorker.id, values);
         message.success('更新成功');
       } else {
-        await api.users.create({
+        await api.users.createWorker({
           ...values,
-          role: 'worker',
           password: '123456'
         });
         message.success('创建成功');

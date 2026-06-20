@@ -39,10 +39,11 @@ const calculateDuration = (start, end) => {
 };
 
 const formatDuration = (minutes) => {
-  if (!minutes) return '未计算';
-  if (minutes < 60) return `${minutes}分钟`;
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
+  if (minutes === null || minutes === undefined || isNaN(Number(minutes)) || Number(minutes) === 0) return '-';
+  const m = Number(minutes);
+  if (m < 60) return `${m}分钟`;
+  const hours = Math.floor(m / 60);
+  const mins = m % 60;
   if (hours < 24) return `${hours}小时${mins}分钟`;
   const days = Math.floor(hours / 24);
   const remainHours = hours % 24;

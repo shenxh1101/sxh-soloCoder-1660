@@ -67,6 +67,7 @@ const createWorker = async (req, res, next) => {
       password: hashedPassword,
       role: 'worker',
       skills: skills || [],
+      status: 'active',
       workStatus: 'free',
       currentOrderCount: 0
     });

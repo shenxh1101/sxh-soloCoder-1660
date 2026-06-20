@@ -477,7 +477,10 @@ const StatsPage: React.FC = () => {
               key: 'avgResponseTime',
               width: 120,
               align: 'center',
-              render: formatDuration
+              render: (val) => {
+                if (val === null || val === undefined || val === '' || val === '未计算' || val === '-') return '-';
+                return val;
+              }
             },
             {
               title: '平均处理时长',
@@ -485,7 +488,10 @@ const StatsPage: React.FC = () => {
               key: 'avgCompletionTime',
               width: 120,
               align: 'center',
-              render: formatDuration
+              render: (val) => {
+                if (val === null || val === undefined || val === '' || val === '未计算' || val === '-') return '-';
+                return val;
+              }
             },
             {
               title: '平均评分',

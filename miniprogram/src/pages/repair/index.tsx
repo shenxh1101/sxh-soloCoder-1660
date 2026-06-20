@@ -86,7 +86,8 @@ const RepairPage: React.FC = () => {
         room,
         contactName,
         contactPhone,
-        priority: 'medium'
+        priority: 'medium',
+        images: images || []
       });
 
       Taro.showToast({
